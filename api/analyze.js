@@ -15,18 +15,18 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: "OPENAI_API_KEY not set in Vercel env" }), { status: 500, headers: { "content-type": "application/json" } });
   }
 
-  const prompt = `You are a sport card expert. Analyze this collectible sport card image. Return ONLY valid JSON with no markdown:
+  const prompt = `You are a sport card expert. Identify this collectible sport card, then find a fair market price by looking up recent eBay sold listings and resale comps. Return ONLY valid JSON with no markdown:
 
 {
   "card": "Full card name",
   "player": "Player name",
   "year_set": "Year / Set name",
   "condition": "Estimated condition (e.g., Near Mint, Good, etc.)",
-  "estimated_value": "Price range in USD (e.g., $5-15)",
+  "estimated_value": "Price range in USD based on real eBay sold comps (e.g., $5-15)",
   "confidence": "Low / Medium / High"
 }
 
-If you cannot identify the card, set confidence to "Low" and estimated_value to "Unknown".`;
+Price needs real sold comps. If unknown, set confidence to "Low" and estimated_value to "Unknown".`;
 
   try {
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -34,6 +34,7 @@ If you cannot identify the card, set confidence to "Low" and estimated_value to 
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: "gpt-4o-mini",
+        web_search_options: {},
         messages: [{
           role: "user",
           content: [
