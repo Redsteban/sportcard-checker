@@ -43,7 +43,7 @@ Include 1-3 source URLs from eBay or other listing sites. If unknown, set confid
             { type: "image_url", image_url: { url: body.image } }
           ]
         }],
-        max_tokens: 500,
+        max_tokens: 800,
       }),
     });
 
@@ -60,7 +60,11 @@ Include 1-3 source URLs from eBay or other listing sites. If unknown, set confid
     let obj;
     try { obj = JSON.parse(text); } catch { obj = {}; }
     const ann = data.choices[0].message.annotations || [];
-    obj.sources = ann.map(a => a.url_citation ? a.url_citation.url : a.text || "").filter(Boolean);
+    if (ann.length) {
+      // annotations from OpenAI API are the authoritative source URLs
+      obj.sources = ann.map(a => a.url_citation ? a.url_citation.url : a.text || "").filter(Boolean);
+    }
+    // else: keep sources the model put in the JSON itself
     return new Response(JSON.stringify(obj), {
       status: 200,
       headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
