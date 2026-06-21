@@ -15,18 +15,19 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: "OPENAI_API_KEY not set in Vercel env" }), { status: 500, headers: { "content-type": "application/json" } });
   }
 
-  const prompt = `You are a sport card expert. Identify this collectible sport card, then find a fair market price by looking up recent eBay sold listings and resale comps. Return ONLY valid JSON with no markdown:
+  const prompt = `You are a sport card expert. Identify this collectible sport card, then search eBay sold listings and resale comps. Return ONLY valid JSON with no markdown:
 
 {
   "card": "Full card name",
   "player": "Player name",
   "year_set": "Year / Set name",
   "condition": "Estimated condition (e.g., Near Mint, Good, etc.)",
-  "estimated_value": "Price range in USD based on real eBay sold comps (e.g., $5-15)",
-  "confidence": "Low / Medium / High"
+  "estimated_value": "Price range or amount in USD based on real eBay sold comps",
+  "confidence": "Low / Medium / High",
+  "sources": ["https://www.ebay.com/..."  ]
 }
 
-Price needs real sold comps. If unknown, set confidence to "Low" and estimated_value to "Unknown".`;
+Include 1-3 source URLs from eBay or other listing sites. If unknown, set confidence to "Low", estimated_value to "Unknown", sources to [].`;
 
   try {
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -52,10 +53,15 @@ Price needs real sold comps. If unknown, set confidence to "Low" and estimated_v
     }
 
     const data = await resp.json();
-    let text = data.choices[0].message.content.trim();
+    let text = (data.choices[0].message.content || "").trim();
     // strip markdown fences
     text = text.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
-    return new Response(text, {
+    // merge web-search source URLs from annotations into the JSON
+    let obj;
+    try { obj = JSON.parse(text); } catch { obj = {}; }
+    const ann = data.choices[0].message.annotations || [];
+    obj.sources = ann.map(a => a.url_citation ? a.url_citation.url : a.text || "").filter(Boolean);
+    return new Response(JSON.stringify(obj), {
       status: 200,
       headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
     });

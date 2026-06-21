@@ -42,6 +42,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 <div class="row"><div class="lbl">Condition</div><div class="val" id="c4"></div></div>
 <div class="row"><div class="lbl">Est. Value</div><div class="val pr" id="c5"></div></div>
 <div class="row"><div class="lbl">Confidence</div><div class="val" id="c6"></div></div>
+<div class="row" id="s7r" style="display:none"><div class="lbl">Sources</div><div class="val" id="c7"></div></div>
 </div></div>
 <script>
 // ponytail: two inputs — fi (gallery/drop), ci (camera). capture=environment ignored on desktop
@@ -55,6 +56,6 @@ fi.onchange=()=>load(fi.files[0]);
 ci.onchange=()=>load(ci.files[0]);
 cam.onclick=()=>ci.click();
 function load(f){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>{b64=e.target.result;pv.src=b64;pv.style.display='block'};r.readAsDataURL(f);btn.disabled=false;er.style.display='none';res.style.display='none'}
-btn.onclick=async()=>{if(!b64)return;btn.disabled=true;sp.style.display='block';er.style.display='none';res.style.display='none';try{const r=await fetch('/api/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({image:b64})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Error');['c1','c2','c3','c4','c5','c6'].forEach((id,i)=>document.getElementById(id).textContent=[d.card||'-',d.player||'-',d.year_set||'-',d.condition||'-',d.estimated_value||'-',d.confidence||'-'][i]);res.style.display='block'}catch(e){er.textContent=e.message;er.style.display='block'}finally{btn.disabled=false;sp.style.display='none'}};
+btn.onclick=async()=>{if(!b64)return;btn.disabled=true;sp.style.display='block';er.style.display='none';res.style.display='none';document.getElementById('s7r').style.display='none';try{const r=await fetch('/api/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({image:b64})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Error');['c1','c2','c3','c4','c5','c6'].forEach((id,i)=>document.getElementById(id).textContent=[d.card||'-',d.player||'-',d.year_set||'-',d.condition||'-',d.estimated_value||'-',d.confidence||'-'][i]);if(d.sources&&d.sources.length){const good=d.sources.filter(s=>/^https?:\/\//.test(s));if(good.length){document.getElementById('c7').innerHTML=good.map(s=>`<a href="${s}" target="_blank" rel="noopener" style="color:#fbbf24;text-decoration:underline;display:block;font-size:.8rem;margin-bottom:.25rem">${new URL(s).hostname}</a>`).join('');document.getElementById('s7r').style.display=''}}res.style.display='block'}catch(e){er.textContent=e.message;er.style.display='block'}finally{btn.disabled=false;sp.style.display='none'}};
 </script>
 </body></html>
