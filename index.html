@@ -10,6 +10,8 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:.5rem;background:linear-gradie
 p{color:#94a3b8;margin-bottom:1.5rem;font-size:.875rem}
 .drop{border:2px dashed #475569;border-radius:1rem;padding:2rem;text-align:center;cursor:pointer;transition:all .2s}
 .drop:hover,.drop.active{border-color:#fbbf24;background:#334155}
+.cam{background:linear-gradient(135deg,#64748b,#475569);color:#fff;border:none;border-radius:.75rem;padding:.6rem 1rem;font-size:.9rem;cursor:pointer;width:100%;margin-top:.5rem;transition:opacity .2s}
+.cam:hover{opacity:.85}
 #prev{max-height:220px;margin:.75rem 0;border-radius:.5rem;display:none;width:100%;object-fit:contain}
 button{width:100%;padding:.75rem;border:none;border-radius:.75rem;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#0f172a;font-weight:600;font-size:1rem;cursor:pointer;transition:opacity .2s;margin-top:1rem}
 button:disabled{opacity:.4;cursor:not-allowed}
@@ -27,6 +29,8 @@ button:disabled{opacity:.4;cursor:not-allowed}
 <h1>Sport Card Price Checker</h1>
 <p>Upload a photo of a collectible sport card</p>
 <div class="drop" id="dz"><p>Drop photo here, or click to select</p><input type="file" id="fi" accept="image/*" hidden></div>
+<button id="cam" class="cam">Take Photo</button>
+<input type="file" id="ci" accept="image/*" capture="environment" hidden>
 <img id="prev">
 <div class="spin" id="sp"></div>
 <button id="go" disabled>Analyze Card</button>
@@ -40,14 +44,16 @@ button:disabled{opacity:.4;cursor:not-allowed}
 <div class="row"><div class="lbl">Confidence</div><div class="val" id="c6"></div></div>
 </div></div>
 <script>
-// ponytail: send base64 JSON instead of multipart — zero server deps
-const dz=document.getElementById('dz'),fi=document.getElementById('fi'),pv=document.getElementById('prev'),btn=document.getElementById('go'),sp=document.getElementById('sp'),er=document.getElementById('er'),res=document.getElementById('res');
+// ponytail: two inputs — fi (gallery/drop), ci (camera). capture=environment ignored on desktop
+const dz=document.getElementById('dz'),fi=document.getElementById('fi'),ci=document.getElementById('ci'),pv=document.getElementById('prev'),btn=document.getElementById('go'),cam=document.getElementById('cam'),sp=document.getElementById('sp'),er=document.getElementById('er'),res=document.getElementById('res');
 let b64=null;
 dz.onclick=()=>fi.click();
 dz.ondragover=e=>{e.preventDefault();dz.classList.add('active')};
 dz.ondragleave=()=>dz.classList.remove('active');
 dz.ondrop=e=>{e.preventDefault();dz.classList.remove('active');load(e.dataTransfer.files[0])};
 fi.onchange=()=>load(fi.files[0]);
+ci.onchange=()=>load(ci.files[0]);
+cam.onclick=()=>ci.click();
 function load(f){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>{b64=e.target.result;pv.src=b64;pv.style.display='block'};r.readAsDataURL(f);btn.disabled=false;er.style.display='none';res.style.display='none'}
 btn.onclick=async()=>{if(!b64)return;btn.disabled=true;sp.style.display='block';er.style.display='none';res.style.display='none';try{const r=await fetch('/api/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({image:b64})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Error');['c1','c2','c3','c4','c5','c6'].forEach((id,i)=>document.getElementById(id).textContent=[d.card||'-',d.player||'-',d.year_set||'-',d.condition||'-',d.estimated_value||'-',d.confidence||'-'][i]);res.style.display='block'}catch(e){er.textContent=e.message;er.style.display='block'}finally{btn.disabled=false;sp.style.display='none'}};
 </script>
