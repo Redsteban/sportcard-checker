@@ -33,7 +33,7 @@ Price needs real sold comps. If unknown, set confidence to "Low" and estimated_v
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o-mini-search-preview",
         web_search_options: {},
         messages: [{
           role: "user",
